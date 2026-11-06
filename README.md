@@ -54,7 +54,7 @@ en una impresora térmica conectada por USB a un celular.
 
 ### Opción 2: Local
 
-Requisitos: JDK 17, Android SDK (platform 33 + build-tools 33.0.2).
+Requisitos: JDK 17, Android SDK (platform 34 + build-tools 34.0.0).
 
 ```bash
 # Operador

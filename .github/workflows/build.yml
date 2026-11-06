@@ -46,7 +46,7 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      # 3) Configurar Android SDK
+      # 3) Configurar Android SDK (platform 34 + build-tools 34.0.0)
       #    NO usamos android-actions/setup-android@v3 porque intenta instalar
       #    el paquete legacy 'tools' (ya eliminado de los repos de Google) y
       #    falla con "Failed to find package 'tools'".
