@@ -5,6 +5,8 @@
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
+    // Compose Compiler plugin (Kotlin 2.0+) - reemplaza composeOptions
+    id("org.jetbrains.kotlin.plugin.compose")
 }
 
 android {
@@ -38,9 +40,6 @@ android {
     }
     buildFeatures {
         compose = true
-    }
-    composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.14"
     }
     packaging {
         resources {
