@@ -9,7 +9,7 @@ plugins {
 
 android {
     namespace = "com.herracor.codeprinter.operador"
-    compileSdk = 33
+    compileSdk = 34
 
     defaultConfig {
         applicationId = "com.herracor.codeprinter.operador"

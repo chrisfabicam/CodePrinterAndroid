@@ -74,7 +74,7 @@ jobs:
 
           # Aceptar licencias e instalar SOLO los paquetes necesarios
           yes | "$SDKMGR" --licenses > /dev/null 2>&1 || true
-          "$SDKMGR" --install "platform-tools" "platforms;android-33" "build-tools;33.0.2"
+          "$SDKMGR" --install "platform-tools" "platforms;android-34" "build-tools;34.0.0"
 
           echo "SDK instalado:"
           ls "$ANDROID_HOME/platforms" 2>/dev/null || true
