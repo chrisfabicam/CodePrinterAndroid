@@ -1,0 +1,94 @@
+# =====================================================
+# CodePrinter Android - Build APKs en GitHub Actions
+# =====================================================
+# Compila las dos apps (operador y printserver) y sube los APK debug
+# como artifacts descargables desde la pestaña "Actions" del repo.
+#
+# ESTRUCTURA DEL PROYECTO:
+#   .
+#   ├── operador/      <- proyecto Gradle independiente (settings.gradle.kts propio)
+#   │   └── app/
+#   └── printserver/   <- proyecto Gradle independiente (settings.gradle.kts propio)
+#       └── app/
+#
+# Cada app se compila por separado con su propio gradlew.
+#
+# PARA AJUSTAR:
+#   - Si agregás flavors: cambiá `assembleDebug` por `assemble<Flavor>Debug`
+#   - Si querés release firmado: agregá los secrets (KEYSTORE_BASE64,
+#     KEYSTORE_PASSWORD, KEY_ALIAS, KEY_PASSWORD) y usá `assembleRelease`
+#   - Si cambiás la versión de JDK: ajustá `java-version` (debe coincidir
+#     con `compileOptions`/`kotlinOptions` de los build.gradle.kts)
+
+name: Build Android APKs
+
+on:
+  # Se ejecuta al hacer push a main/master
+  push:
+    branches: [ main, master ]
+  # Permite lanzarlo manualmente desde la pestaña Actions
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build APKs
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1) Traer el código del repo
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # 2) Configurar JDK 17 (requerido por AGP 8.x y Kotlin 1.9)
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      # 3) Configurar Android SDK (instala platform 33 + build-tools)
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      # 4) Cachear Gradle para acelerar builds sucesivos
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      # 5) Dar permisos de ejecución a los wrappers
+      - name: Make gradlew executable
+        run: |
+          chmod +x operador/gradlew
+          chmod +x printserver/gradlew
+
+      # 6) Compilar la app Operador (proyecto independiente)
+      - name: Build Operador (debug)
+        working-directory: operador
+        run: ./gradlew assembleDebug --stacktrace --no-daemon
+
+      # 7) Compilar la app PrintServer (proyecto independiente)
+      - name: Build PrintServer (debug)
+        working-directory: printserver
+        run: ./gradlew assembleDebug --stacktrace --no-daemon
+
+      # 8) Subir el APK del Operador como artifact
+      - name: Upload Operador APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: operador-debug-apk
+          path: operador/app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+
+      # 9) Subir el APK del PrintServer como artifact
+      - name: Upload PrintServer APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: printserver-debug-apk
+          path: printserver/app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error

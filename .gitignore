@@ -1,0 +1,39 @@
+# =====================================================
+# CodePrinter Android - .gitignore
+# =====================================================
+
+# local.properties contiene la ruta del SDK local (no debe publicarse)
+local.properties
+
+# Artefactos de build de Gradle
+.gradle/
+build/
+*/build/
+**/build/
+
+# Archivos de IDE
+.idea/
+*.iml
+*.hprof
+.vscode/
+
+# Keystores de firma (NUNCA subir)
+*.jks
+*.keystore
+keystore.properties
+
+# APKs / AABs generados
+*.apk
+*.aab
+
+# Capturas y archivos temporales de Android Studio
+captures/
+.externalNativeBuild/
+.cxx/
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log

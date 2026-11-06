@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Filtro USB para la impresora de etiquetas TSPL2.
+  Los IDs exactos se ajustan al modelo; si no se conocen, se usa la clase
+  "7" (Printer) que abarca a la mayoría de impresoras USB de etiquetas.
+-->
+<resources>
+    <!-- Clase USB 7 = Printer (acepta cualquier impresora USB) -->
+    <usb-device class="7" subclass="1" protocol="2" />
+    <!-- Winbond (0416) - usado por varias impresoras POS/label genéricas -->
+    <usb-device vendor-id="1046" />
+</resources>
