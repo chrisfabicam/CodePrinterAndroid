@@ -100,12 +100,12 @@ jobs:
       # 6) Compilar la app Operador (proyecto independiente)
       - name: Build Operador (debug)
         working-directory: operador
-        run: ./gradlew assembleDebug --stacktrace --no-daemon
+        run: ./gradlew assembleDebug --stacktrace --no-daemon --console=plain
 
       # 7) Compilar la app PrintServer (proyecto independiente)
       - name: Build PrintServer (debug)
         working-directory: printserver
-        run: ./gradlew assembleDebug --stacktrace --no-daemon
+        run: ./gradlew assembleDebug --stacktrace --no-daemon --console=plain
 
       # 8) Subir el APK del Operador como artifact
       - name: Upload Operador APK
