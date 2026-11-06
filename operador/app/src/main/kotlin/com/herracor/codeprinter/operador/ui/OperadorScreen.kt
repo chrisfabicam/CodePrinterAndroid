@@ -2,7 +2,6 @@ package com.herracor.codeprinter.operador.ui
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -17,22 +16,28 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -49,15 +54,26 @@ fun OperadorScreen(vm: OperadorViewModel) {
 
     Scaffold(
         topBar = {
-            TopAppBar(title = {
-                Column {
-                    Text("CodePrinter", fontWeight = FontWeight.Bold)
-                    Text(
-                        "Impresión de etiquetas",
-                        style = MaterialTheme.typography.labelSmall
-                    )
+            TopAppBar(
+                title = {
+                    Column {
+                        Text("CodePrinter", fontWeight = FontWeight.Bold)
+                        Text(
+                            "Impresión de etiquetas",
+                            style = MaterialTheme.typography.labelSmall
+                        )
+                    }
+                },
+                actions = {
+                    // Botón de Ajustes siempre visible en la barra superior
+                    IconButton(onClick = { showSettings = true }) {
+                        Icon(
+                            imageVector = Icons.Default.Settings,
+                            contentDescription = "Ajustes"
+                        )
+                    }
                 }
-            })
+            )
         }
     ) { inner ->
         Column(
@@ -68,6 +84,26 @@ fun OperadorScreen(vm: OperadorViewModel) {
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
+            // -------- Aviso de configuración pendiente --------
+            if (ui.erpEndpoint.isBlank() || ui.erpHost.isBlank()) {
+                Card {
+                    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(
+                            "⚠️ Falta configurar el ERP",
+                            style = MaterialTheme.typography.titleSmall,
+                            color = MaterialTheme.colorScheme.error
+                        )
+                        Text(
+                            "Tocá el engranaje ⚙️ arriba a la derecha para cargar el endpoint y el host del ERP.",
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                        Button(onClick = { showSettings = true }) {
+                            Text("Configurar ahora")
+                        }
+                    }
+                }
+            }
+
             // -------- 1. Consultar --------
             Card {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -179,57 +215,6 @@ fun OperadorScreen(vm: OperadorViewModel) {
                             modifier = Modifier.fillMaxWidth()
                         ) { Text(if (ui.imprimiendo) "Enviando…" else "🖨️ Imprimir") }
 
-                        OutlinedButton(onClick = { showSettings = !showSettings }) {
-                            Text(if (showSettings) "Ocultar ajustes" else "⚙️ Ajustes")
-                        }
-
-                        if (showSettings) {
-                            // ---- ERP ----
-                            Text("Servidor ERP", style = MaterialTheme.typography.titleSmall)
-
-                            OutlinedTextField(
-                                value = ui.erpEndpoint,
-                                onValueChange = vm::onErpEndpointChange,
-                                label = { Text("Endpoint SOAP del ERP") },
-                                placeholder = { Text("http://<ip-o-host>/PSIGServices/PSIGServicios.svc") },
-                                singleLine = true,
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                            Text(
-                                "URL completa del servicio SOAP. Se guarda solo en este dispositivo.",
-                                style = MaterialTheme.typography.bodySmall
-                            )
-
-                            OutlinedTextField(
-                                value = ui.erpHost,
-                                onValueChange = vm::onErpHostChange,
-                                label = { Text("Header Host del ERP") },
-                                placeholder = { Text("hostname-interno-del-erp") },
-                                singleLine = true,
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                            Text(
-                                "Valor del header HTTP 'Host' que exige el servidor IIS del ERP.",
-                                style = MaterialTheme.typography.bodySmall
-                            )
-
-                            // ---- Impresora ----
-                            Text("Celular-impresora", style = MaterialTheme.typography.titleSmall)
-
-                            OutlinedTextField(
-                                value = ui.printerUrl,
-                                onValueChange = vm::onPrinterUrlChange,
-                                label = { Text("URL del celular-impresora") },
-                                placeholder = { Text("http://192.168.1.50:8080") },
-                                singleLine = true,
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                            Text(
-                                "Es la IP del celular que tiene conectada la impresora TSPL2 por USB.",
-                                style = MaterialTheme.typography.bodySmall
-                            )
-                        }
-
                         if (ui.mensaje.isNotEmpty()) {
                             MessageBanner(ui.mensaje, ui.mensajeEsError)
                         }
@@ -244,6 +229,88 @@ fun OperadorScreen(vm: OperadorViewModel) {
             )
         }
     }
+
+    // -------- Diálogo de Ajustes --------
+    if (showSettings) {
+        SettingsDialog(
+            erpEndpoint = ui.erpEndpoint,
+            erpHost = ui.erpHost,
+            printerUrl = ui.printerUrl,
+            onErpEndpointChange = vm::onErpEndpointChange,
+            onErpHostChange = vm::onErpHostChange,
+            onPrinterUrlChange = vm::onPrinterUrlChange,
+            onDismiss = { showSettings = false }
+        )
+    }
+}
+
+@Composable
+private fun SettingsDialog(
+    erpEndpoint: String,
+    erpHost: String,
+    printerUrl: String,
+    onErpEndpointChange: (String) -> Unit,
+    onErpHostChange: (String) -> Unit,
+    onPrinterUrlChange: (String) -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("⚙️ Ajustes") },
+        text = {
+            Column(
+                modifier = Modifier.verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Text("Servidor ERP", style = MaterialTheme.typography.titleSmall)
+
+                OutlinedTextField(
+                    value = erpEndpoint,
+                    onValueChange = onErpEndpointChange,
+                    label = { Text("Endpoint SOAP del ERP") },
+                    placeholder = { Text("http://<ip-o-host>/PSIGServices/PSIGServicios.svc") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Text(
+                    "URL completa del servicio SOAP. Se guarda solo en este dispositivo.",
+                    style = MaterialTheme.typography.bodySmall
+                )
+
+                OutlinedTextField(
+                    value = erpHost,
+                    onValueChange = onErpHostChange,
+                    label = { Text("Header Host del ERP") },
+                    placeholder = { Text("hostname-interno-del-erp") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Text(
+                    "Valor del header HTTP 'Host' que exige el servidor IIS del ERP.",
+                    style = MaterialTheme.typography.bodySmall
+                )
+
+                Spacer(Modifier.height(8.dp))
+                Text("Celular-impresora", style = MaterialTheme.typography.titleSmall)
+
+                OutlinedTextField(
+                    value = printerUrl,
+                    onValueChange = onPrinterUrlChange,
+                    label = { Text("URL del celular-impresora") },
+                    placeholder = { Text("http://192.168.1.50:8080") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Text(
+                    "IP del celular que tiene conectada la impresora TSPL2 por USB.",
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) { Text("Cerrar") }
+        }
+    )
 }
 
 @Composable
