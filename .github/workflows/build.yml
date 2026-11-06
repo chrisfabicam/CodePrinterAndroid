@@ -37,18 +37,48 @@ jobs:
     steps:
       # 1) Traer el código del repo
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       # 2) Configurar JDK 17 (requerido por AGP 8.x y Kotlin 1.9)
       - name: Set up JDK 17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: 'temurin'
           java-version: '17'
 
-      # 3) Configurar Android SDK (instala platform 33 + build-tools)
+      # 3) Configurar Android SDK
+      #    NO usamos android-actions/setup-android@v3 porque intenta instalar
+      #    el paquete legacy 'tools' (ya eliminado de los repos de Google) y
+      #    falla con "Failed to find package 'tools'".
+      #    En su lugar, instalamos explícitamente lo que necesita el proyecto.
       - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
+        run: |
+          # El runner de ubuntu-latest ya trae el SDK en esta ruta
+          export ANDROID_HOME=/usr/local/lib/android/sdk
+          export ANDROID_SDK_ROOT=$ANDROID_HOME
+          echo "ANDROID_HOME=$ANDROID_HOME" >> $GITHUB_ENV
+          echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT" >> $GITHUB_ENV
+
+          # Localizar sdkmanager (la ruta cambia según la versión del runner)
+          SDKMGR=$(find "$ANDROID_HOME/cmdline-tools" -name sdkmanager -type f 2>/dev/null | head -1)
+          if [ -z "$SDKMGR" ]; then
+            echo "sdkmanager no encontrado, instalando cmdline-tools..."
+            mkdir -p "$ANDROID_HOME/cmdline-tools"
+            cd /tmp
+            curl -sSL -o cmdline-tools.zip https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip
+            unzip -q cmdline-tools.zip -d "$ANDROID_HOME/cmdline-tools"
+            mv "$ANDROID_HOME/cmdline-tools/cmdline-tools" "$ANDROID_HOME/cmdline-tools/latest" 2>/dev/null || true
+            SDKMGR="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          fi
+          echo "sdkmanager: $SDKMGR"
+
+          # Aceptar licencias e instalar SOLO los paquetes necesarios
+          yes | "$SDKMGR" --licenses > /dev/null 2>&1 || true
+          "$SDKMGR" --install "platform-tools" "platforms;android-33" "build-tools;33.0.2"
+
+          echo "SDK instalado:"
+          ls "$ANDROID_HOME/platforms" 2>/dev/null || true
+          ls "$ANDROID_HOME/build-tools" 2>/dev/null || true
 
       # 4) Cachear Gradle para acelerar builds sucesivos
       - name: Cache Gradle
