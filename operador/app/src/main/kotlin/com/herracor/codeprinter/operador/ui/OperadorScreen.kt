@@ -107,7 +107,17 @@ fun OperadorScreen(vm: OperadorViewModel) {
             // -------- 1. Consultar --------
             Card {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Text("1. Consultar artículo", style = MaterialTheme.typography.titleMedium)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text("1. Consultar artículo", style = MaterialTheme.typography.titleMedium)
+                        // Acceso a Ajustes siempre visible, sin depender del TopAppBar
+                        TextButton(onClick = { showSettings = true }) {
+                            Text("⚙️ Ajustes")
+                        }
+                    }
 
                     OutlinedTextField(
                         value = ui.codigo,
@@ -189,35 +199,44 @@ fun OperadorScreen(vm: OperadorViewModel) {
                     }
                 }
 
-                // -------- 3. Imprimir --------
-                Card {
-                    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Text("3. Imprimir", style = MaterialTheme.typography.titleMedium)
+            }
 
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text("Cantidad:")
-                            Spacer(Modifier.width(12.dp))
-                            OutlinedTextField(
-                                value = ui.cantidad.toString(),
-                                onValueChange = {
-                                    val n = it.filter { c -> c.isDigit() }.take(3).toIntOrNull() ?: 1
-                                    vm.onCantidadChange(n)
-                                },
-                                singleLine = true,
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                                modifier = Modifier.width(100.dp)
-                            )
-                        }
+            // -------- 3. Imprimir (siempre visible) --------
+            Card {
+                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text("3. Imprimir", style = MaterialTheme.typography.titleMedium)
 
-                        Button(
-                            onClick = vm::imprimir,
-                            enabled = !ui.imprimiendo,
-                            modifier = Modifier.fillMaxWidth()
-                        ) { Text(if (ui.imprimiendo) "Enviando…" else "🖨️ Imprimir") }
+                    if (ui.articulo == null) {
+                        Text(
+                            "Consultá un artículo primero para habilitar la impresión.",
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
 
-                        if (ui.mensaje.isNotEmpty()) {
-                            MessageBanner(ui.mensaje, ui.mensajeEsError)
-                        }
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text("Cantidad:")
+                        Spacer(Modifier.width(12.dp))
+                        OutlinedTextField(
+                            value = ui.cantidad.toString(),
+                            onValueChange = {
+                                val n = it.filter { c -> c.isDigit() }.take(3).toIntOrNull() ?: 1
+                                vm.onCantidadChange(n)
+                            },
+                            singleLine = true,
+                            enabled = ui.articulo != null,
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            modifier = Modifier.width(100.dp)
+                        )
+                    }
+
+                    Button(
+                        onClick = vm::imprimir,
+                        enabled = !ui.imprimiendo && ui.articulo != null,
+                        modifier = Modifier.fillMaxWidth()
+                    ) { Text(if (ui.imprimiendo) "Enviando…" else "🖨️ Imprimir") }
+
+                    if (ui.mensaje.isNotEmpty()) {
+                        MessageBanner(ui.mensaje, ui.mensajeEsError)
                     }
                 }
             }
